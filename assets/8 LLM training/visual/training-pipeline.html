@@ -1,0 +1,147 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lecture 11 training visual explorer</title>
+<style>
+:root{font-family:system-ui,-apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;color:#242938;background:#f7f8fc;--blue:#2637a8;--ink:#242938;--green:#c8f43b;--green-ink:#607500;--orange:#f59a45;--line:#d9ddea;--muted:#657084;--grid:#e7e9f0}*{box-sizing:border-box}body{max-width:1180px;margin:auto;padding:22px}h1,h2,h3,p{margin:0}h1{font-size:clamp(25px,3.1vw,42px);line-height:1.08}.ey{font:600 11px ui-monospace;color:var(--blue);letter-spacing:.12em}.lead{margin-top:9px;color:var(--muted);line-height:1.5}.stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:20px 0 11px}.stage{border:0;border-top:2px solid var(--line);background:transparent;text-align:left;padding:9px 4px;cursor:pointer;color:var(--ink)}.stage:hover{background:#eef0ff}.stage:focus-visible,.controls button:focus-visible{outline:3px solid #b8c2ff;outline-offset:2px}.stage.active{border-top-color:var(--blue);background:#eef0ff}.stage .n{font:12px ui-monospace;color:var(--blue)}.stage strong{display:block;font-size:15px;line-height:1.2;margin-top:5px}.stage small{display:block;color:var(--muted);margin-top:3px;font-size:11px}.explorer{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(255px,.55fr);gap:18px;align-items:start}.canvas,.readout{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;box-shadow:0 6px 22px #24326b0d}.scroll{overflow-x:auto;overscroll-behavior-x:contain}.canvas svg{width:100%;height:auto;display:block}.canvas text{font:12px system-ui,"PingFang SC",sans-serif;fill:var(--ink)}.canvas .small{font-size:11px;fill:var(--muted)}.canvas .tiny{font-size:10px;fill:var(--muted)}.canvas .ey-svg{font:600 11px ui-monospace;letter-spacing:1px;fill:var(--blue)}.box{fill:#fff;stroke:var(--line);stroke-width:2}.blue{fill:#eef0ff;stroke:var(--blue);stroke-width:2}.green{fill:#efffc6;stroke:var(--green-ink);stroke-width:2}.orange{fill:#fff3cf;stroke:#e7a326;stroke-width:2}.wire{stroke:#8a91a2;fill:none;stroke-width:2}.active{stroke:var(--blue);stroke-width:3}.soft{stroke-dasharray:5 4}.faded{opacity:.22}.spine-box{fill:#f4f5fa;stroke:var(--line);stroke-width:1.5}.current{fill:#efffc6;stroke:var(--green-ink);stroke-width:2}.readout h3{font-size:14px;margin-bottom:8px}.readout p{font-size:13px;color:var(--muted);line-height:1.55;margin-top:8px}.readout .big{font-size:22px;line-height:1.15;font-weight:700;color:var(--blue);margin-top:16px}.readout .label{font-size:11px;color:var(--muted)}.formula{display:block;background:#171a2b;color:#fff;padding:10px;border-radius:5px;font:12px ui-monospace;margin-top:10px;overflow:auto;white-space:pre-wrap}.controls{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 8px}.controls button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:8px 10px;font-weight:600;color:var(--ink);cursor:pointer}.controls button:hover{border-color:var(--blue)}.controls button[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}.control-group{margin-top:10px}.control-label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.source{margin-top:12px}.source summary{cursor:pointer;color:var(--blue);font-size:13px}.source p{font-size:12px}.source img{max-width:100%;display:block;margin-top:8px}.foot{font-size:11px;color:var(--muted);line-height:1.45;margin-top:10px}.spine-text{font-size:10px!important;fill:var(--muted)!important}.spine-title{font-size:10px!important;fill:var(--blue)!important;font-weight:700}@media(max-width:850px){body{padding:15px}.stages{grid-template-columns:repeat(2,minmax(0,1fr))}.explorer{grid-template-columns:1fr}.readout{order:2}.canvas,.readout{padding:10px}.canvas svg{min-width:690px}.stage strong{font-size:14px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+<div class="ey">DEEP LEARNING · LECTURE 11 · VISUAL EXPLORER</div>
+<h1>LLM training：同一模型，监督信号如何改变</h1>
+<p class="lead">先沿着稳定的训练路径读图：训练样本 → 模型前向 → 输出 → 学习信号 → 更新。选择阶段后，同一画布会把当前的真实课件对象放大。</p>
+<nav class="stages" aria-label="LLM training 阶段">
+  <button type="button" class="stage active" aria-pressed="true" data-stage="pre"><span class="n">01</span><strong>Pretraining</strong><small>next-token</small></button>
+  <button type="button" class="stage" aria-pressed="false" data-stage="data"><span class="n">02</span><strong>Data + context</strong><small>有效信号</small></button>
+  <button type="button" class="stage" aria-pressed="false" data-stage="sft"><span class="n">03</span><strong>SFT / LoRA</strong><small>任务行为</small></button>
+  <button type="button" class="stage" aria-pressed="false" data-stage="pref"><span class="n">04</span><strong>Preference</strong><small>答案选择</small></button>
+  <button type="button" class="stage" aria-pressed="false" data-stage="reason"><span class="n">05</span><strong>Reasoning / Distill</strong><small>验证与迁移</small></button>
+</nav>
+<div class="explorer">
+  <div class="canvas">
+    <div class="scroll"><svg id="scene" viewBox="0 0 820 590" role="img" aria-label="LLM training 主图：样本经过模型成为输出，再由监督信号更新模型"></svg></div>
+    <div class="foot">课件来源案例可展开；教学示意会在图中标出。蓝色表示模型主路径，绿色表示目标或当前信号，橙色表示比较、检查或边界。</div>
+  </div>
+  <aside class="readout" aria-live="polite">
+    <h3 id="question">预训练究竟教会了什么？</h3>
+    <p id="instruction">沿课件中的 token 序列从输入读到目标 token，再观察模型如何产生 loss。</p>
+    <div class="big" id="metric">预测下一个 token</div><div class="label" id="metric-label">主要改变</div>
+    <code class="formula" id="formula">L = − Σₜ log pθ(xₜ | x&lt;ₜ)</code>
+    <p id="status">低 loss 不自动证明模型事实可靠、会遵循指令或符合人类偏好。</p>
+    <div class="control-group" data-group="source" hidden><span class="control-label">选择要追踪的数据来源</span><div class="controls"><button type="button" aria-pressed="true" data-source="web">网页</button><button type="button" aria-pressed="false" data-source="pdf">学术 PDF</button><button type="button" aria-pressed="false" data-source="code">GitHub</button><button type="button" aria-pressed="false" data-source="math">数学 / 科学</button></div></div>
+    <div class="control-group" data-group="context" hidden><span class="control-label">教学示意：比较可见 context span</span><div class="controls"><button type="button" aria-pressed="true" data-context="short">较短</button><button type="button" aria-pressed="false" data-context="long">较长</button></div></div>
+    <div class="control-group" data-group="adapter" hidden><span class="control-label">替换任务适配器</span><div class="controls"><button type="button" aria-pressed="true" data-adapter="spam">Spam</button><button type="button" aria-pressed="false" data-adapter="sentiment">Sentiment</button><button type="button" aria-pressed="false" data-adapter="translation">Translation</button></div></div>
+    <div class="control-group" data-group="method" hidden><span class="control-label">切换偏好优化路径</span><div class="controls"><button type="button" aria-pressed="true" data-method="rlhf">RLHF</button><button type="button" aria-pressed="false" data-method="dpo">DPO</button></div></div>
+    <div class="control-group" data-group="signal" hidden><span class="control-label">看哪种推理监督</span><div class="controls"><button type="button" aria-pressed="true" data-signal="outcome">结果</button><button type="button" aria-pressed="false" data-signal="process">过程</button></div></div>
+    <div class="controls"><button type="button" data-reset>恢复初始阶段</button></div>
+    <details class="source"><summary id="source-label">查看对应课件案例</summary><div id="source-content"><p id="source-text">teacher forcing 与 next-token 预测：课件 p.18–22。</p><div id="source-images"></div></div></details>
+  </aside>
+</div>
+<script>
+(()=> {
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const state={stage:"pre",source:"web",context:"short",adapter:"spam",method:"rlhf",signal:"outcome"};
+  const outer=(label,title)=>'<rect class="box" x="18" y="18" width="784" height="544" rx="10"/><text class="ey-svg" x="38" y="48">'+label+'</text><text x="38" y="77" font-size="20" font-weight="700">'+title+'</text>';
+  const spine=()=>{const stages=[["data","Data"],["pre","Pretraining"],["sft","SFT"],["pref","Preference"],["reason","Reasoning / Distill"]],x0=42,w=132,gap=13;let s='<text class="spine-title" x="44" y="501">同一训练链</text>';stages.forEach(([key,label],i)=>{const x=x0+i*(w+gap);if(i)s+='<path class="wire" d="M'+(x-13)+' 522H'+(x-2)+'"/>';s+='<rect class="'+(state.stage===key?"current":"spine-box")+'" x="'+x+'" y="510" width="'+w+'" height="37" rx="5"/><text class="spine-text" x="'+(x+9)+'" y="533">'+label+'</text>';});return s;};
+  function pre(){
+    let s=outer("01 · SOURCE P.18–22","A teddy bear is → 每个位置都预测下一个 token");
+    s+='<text class="small" x="42" y="108">课件 p.18 的输入与目标右移一格；五个位置在一次 forward 中并行计算</text>';
+    s+='<text x="50" y="145" font-weight="700">模型预测 / shifted target</text><text class="tiny" x="50" y="164">所有位置都预测“右边的下一个 token”</text>';
+    const xs=[78,215,352,489,626],inputs=["BOS","A","teddy","bear","is"],targets=["A","teddy","bear","is","?"];
+    xs.forEach((x,i)=>{s+='<rect class="'+(i===4?"orange":"green")+'" x="'+x+'" y="174" width="76" height="34" rx="5"/><text x="'+(x+18)+'" y="196">'+targets[i]+'</text><path class="wire active" d="M'+(x+38)+' 245V210"/>';});
+    s+='<rect class="blue" x="55" y="246" width="715" height="79" rx="8"/><text x="366" y="278" font-size="18" font-weight="700">LLM</text><text class="small" x="276" y="302">causal mask：位置 t 只能读取左侧历史 x&lt;ₜ</text>';
+    xs.forEach((x,i)=>{s+='<path class="wire active" d="M'+(x+38)+' 367V326"/><rect class="box" x="'+x+'" y="368" width="76" height="34" rx="5"/><text x="'+(x+12)+'" y="390">'+inputs[i]+'</text>';});
+    s+='<text x="50" y="425" font-weight="700">输入 token</text><rect class="annotation" x="50" y="441" width="715" height="46" rx="5"/><text x="68" y="460" font-weight="700">训练并行与监督信号</text><text class="tiny" x="68" y="478">mask 屏蔽未来；cross-entropy 奖励右侧的正确 target</text>';
+    return s+spine();
+  }
+  function dataView(){
+    let s=outer("02 · SOURCE P.23–38","数据管线：来源不同，清洗路径也不同");
+    s+='<text class="small" x="42" y="108">课件 p.27 的教学结构重绘；选择来源以追踪其专属处理路径</text>';
+    const active=state.source,defs=[
+      {key:"web",label:"Common Crawl",y:156,prep:"HTML extract",steps:["heuristic","dedup","topic / quality"]},
+      {key:"pdf",label:"Academic PDFs",y:220,prep:"OCR extract",steps:["heuristic","dedup","topic / quality"]},
+      {key:"code",label:"GitHub repos",y:284,prep:"language class.",steps:[]},
+      {key:"math",label:"FineMath / arXiv / Wiki",y:348,prep:"",steps:[]}
+    ];
+    const cls=key=>key===active?"active":"faded";
+    defs.forEach(d=>{
+      const cy=d.y+17;s+='<g class="'+cls(d.key)+'"><rect class="'+(d.key===active?"green":"box")+'" x="42" y="'+d.y+'" width="112" height="34" rx="5"/><text class="tiny" x="50" y="'+(d.y+21)+'">'+d.label+'</text>';
+      if(d.prep){s+='<path class="wire '+(d.key===active?"active":"")+'" d="M154 '+cy+'H173"/><rect class="'+(d.key===active?"orange":"box")+'" x="175" y="'+d.y+'" width="98" height="34" rx="5"/><text class="tiny" x="183" y="'+(d.y+21)+'">'+d.prep+'</text>';}
+      if(d.steps.length){const x1=273;s+='<path class="wire '+(d.key===active?"active":"")+'" d="M273 '+cy+'H290"/><rect class="'+(d.key===active?"orange":"box")+'" x="292" y="'+d.y+'" width="86" height="34" rx="5"/><text class="tiny" x="299" y="'+(d.y+21)+'">heuristic</text><path class="wire '+(d.key===active?"active":"")+'" d="M378 '+cy+'H391"/><rect class="'+(d.key===active?"orange":"box")+'" x="393" y="'+d.y+'" width="77" height="34" rx="5"/><text class="tiny" x="400" y="'+(d.y+21)+'">dedup</text><path class="wire '+(d.key===active?"active":"")+'" d="M470 '+cy+'H483"/><rect class="'+(d.key===active?"orange":"box")+'" x="485" y="'+d.y+'" width="102" height="34" rx="5"/><text class="tiny" x="491" y="'+(d.y+21)+'">topic / quality</text><path class="wire '+(d.key===active?"active":"")+'" d="M587 '+cy+'H606"/>';}
+      else if(d.key==="code"){s+='<path class="wire '+(d.key===active?"active":"")+'" d="M273 '+cy+'H316"/><rect class="'+(d.key===active?"orange":"box")+'" x="318" y="'+d.y+'" width="124" height="34" rx="5"/><text class="tiny" x="325" y="'+(d.y+21)+'">language classify</text><path class="wire '+(d.key===active?"active":"")+'" d="M442 '+cy+'H606"/>';}
+      else{s+='<path class="wire '+(d.key===active?"active":"")+'" d="M154 '+cy+'H606"/>';}
+      s+='</g>';
+    });
+    s+='<rect class="spine-box" x="608" y="143" width="54" height="255" rx="7"/><text class="tiny" x="616" y="169">MIXING</text><text class="tiny" x="616" y="194">↓</text><text class="tiny" x="616" y="219">↓</text><text class="tiny" x="616" y="244">↓</text><text class="tiny" x="616" y="269">↓</text><text class="tiny" x="616" y="294">↓</text><text class="tiny" x="616" y="319">↓</text><text class="tiny" x="616" y="344">↓</text><text class="tiny" x="616" y="369">↓</text>';
+    s+='<path class="wire active" d="M662 196H684"/><rect class="orange" x="686" y="162" width="104" height="49" rx="6"/><text class="tiny" x="696" y="183">quality</text><text class="tiny" x="696" y="199">upsampling</text><path class="wire active" d="M738 211V236"/><rect class="green" x="686" y="238" width="104" height="49" rx="6"/><text class="tiny" x="696" y="259">Dolma 3</text><text class="tiny" x="696" y="275">mixture</text>';
+    const toks=["The","model","uses","a","long","context","to","connect","distant","tokens","in","text"],visible=state.context==="short"?4:10,start=60,gap=59;
+    s+='<text x="42" y="408" font-weight="700">Context window</text><text class="tiny" x="42" y="426">教学示意：同一文本，窗口覆盖更多 token</text>';
+    toks.forEach((t,i)=>{const x=start+i*gap;s+='<rect class="'+(i<visible?"green":"box")+'" x="'+x+'" y="433" width="53" height="28" rx="3"/><text class="tiny" x="'+(x+4)+'" y="451">'+t+'</text>';});
+    s+='<text class="tiny" x="60" y="479">'+visible+' / 12 个示意 token 在当前窗口内；context 扩大后可读取更远依赖，计算与 KV cache 成本也随之增加。</text>';
+    return s+spine();
+  }
+  function sft(){
+    let s=outer("03 · SOURCE P.42–56","同一个 W₀ + 可替换的任务适配器");
+    s+='<text class="small" x="42" y="108">忠实重绘课件 p.53 的三行比较：基座矩阵相同，低秩分支与任务输出不同</text>';
+    const rows=[["spam","Spam detection"],["sentiment","Sentiment extraction"],["translation","Translation task"]],ys=[151,236,321];
+    rows.forEach(([key,label],i)=>{const y=ys[i],on=state.adapter===key,g=on?"":"faded";s+='<g class="'+g+'"><rect class="'+(on?"blue":"box")+'" x="48" y="'+y+'" width="142" height="52" rx="5"/><text x="103" y="'+(y+23)+'" font-weight="700">W₀</text><text class="tiny" x="67" y="'+(y+42)+'">shared base weights</text><text x="213" y="'+(y+31)+'">+</text><rect class="'+(on?"green":"box")+'" x="241" y="'+y+'" width="63" height="52" rx="4"/><text class="tiny" x="252" y="'+(y+22)+'">Bᵣ</text><text class="tiny" x="246" y="'+(y+41)+'">rank r</text><text x="319" y="'+(y+31)+'">×</text><rect class="'+(on?"green":"box")+'" x="347" y="'+y+'" width="70" height="52" rx="4"/><text class="tiny" x="375" y="'+(y+22)+'">Aᵣ</text><text class="tiny" x="354" y="'+(y+41)+'">rank r</text><path class="wire '+(on?"active":"")+'" d="M417 '+(y+26)+'H474"/><path class="wire '+(on?"active":"")+'" d="M462 '+(y+19)+'L474 '+(y+26)+'L462 '+(y+33)+'"/><rect class="'+(on?"green":"box")+'" x="477" y="'+y+'" width="267" height="52" rx="5"/><text x="493" y="'+(y+23)+'" font-weight="700">'+label+'</text><text class="tiny" x="493" y="'+(y+42)+'">W′ = W₀ + BᵣAᵣ</text></g>';});
+    s+='<rect class="annotation" x="48" y="399" width="696" height="54" rx="6"/><text x="64" y="422" font-weight="700">训练时更新所选的低秩分支</text><text class="small" x="64" y="442">切换任务时替换 Bᵣ/Aᵣ；W₀ 保持共享，因此 adapter 体积远小于完整副本</text>';
+    return s+spine();
+  }
+  function preference(){
+    let s=outer("04 · SOURCE P.67–88","同一个 prompt → 两个候选 → 两条偏好优化路径");
+    s+='<text class="small" x="42" y="108">课件案例 p.73 用 reward model 比较同一 prompt 的两个回答；下方对照 RLHF / DPO</text>';
+    s+='<rect class="box" x="50" y="124" width="720" height="39" rx="5"/><text class="tiny" x="64" y="148">prompt x：Suggest a new activity I could do with my teddy bear.</text>';
+    s+='<rect class="green" x="52" y="174" width="355" height="76" rx="6"/><text x="68" y="197" font-weight="700">candidate y⁺ · reward signal positive</text><text class="tiny" x="68" y="218">“How about you both watch a movie together?”</text><text class="tiny" x="68" y="237">课件回答已缩写，保持核心建议</text>';
+    s+='<rect class="orange" x="423" y="174" width="347" height="76" rx="6"/><text x="439" y="197" font-weight="700">candidate y⁻ · reward signal negative</text><text class="tiny" x="439" y="218">“Do not spend much time with your teddy bear.”</text><text class="tiny" x="439" y="237">课件回答已缩写，保持核心建议</text>';
+    const active=state.method;
+    const lane=(key,y,title,nodes)=>{let x=52,gap=16,w=nodes.length===3?210:166;const on=key===active,fade=on?"":"faded";s+='<g class="'+fade+'"><text x="54" y="'+(y-13)+'" font-weight="700">'+title+'</text>';nodes.forEach((n,i)=>{s+='<rect class="'+(on?(i===nodes.length-1?"green":"blue"):"box")+'" x="'+x+'" y="'+y+'" width="'+w+'" height="45" rx="5"/><text class="tiny" x="'+(x+10)+'" y="'+(y+18)+'">'+n[0]+'</text><text class="tiny" x="'+(x+10)+'" y="'+(y+34)+'">'+n[1]+'</text>';if(i<nodes.length-1){s+='<path class="wire '+(on?"active":"")+'" d="M'+(x+w)+' '+(y+22)+'H'+(x+w+gap)+'"/><path class="wire '+(on?"active":"")+'" d="M'+(x+w+gap-8)+' '+(y+16)+'L'+(x+w+gap)+' '+(y+22)+'L'+(x+w+gap-8)+' '+(y+28)+'"/>';}x+=w+gap;});s+='</g>';};
+    lane("rlhf",285,"RLHF · multi-stage path",[["preference pair","chosen / rejected"],["reward model","score responses"],["PPO / RL","update policy"]]);
+    lane("dpo",385,"DPO · direct preference path",[["preference pair","chosen / rejected"],["reference model","compare log-ratios"],["DPO loss","update policy"]]);
+    return s+spine();
+  }
+  function reasoning(){
+    let s=outer("05 · SOURCE P.89 + NOTE EXTENSION","可验证过程与蒸馏：教师信号怎样迁移");
+    s+='<text class="small" x="42" y="108">课件将 reasoning / distillation 列为后续主题；这里的机制图是配合正文的教学扩展</text>';
+    s+='<rect class="box" x="48" y="143" width="155" height="53" rx="6"/><text x="67" y="166" font-weight="700">problem / prompt</text><text class="tiny" x="67" y="184">输入保持相同</text>';
+    s+='<path class="wire active" d="M203 169H230"/><rect class="blue" x="232" y="133" width="170" height="73" rx="7"/><text x="289" y="157" font-weight="700">teacher</text><text class="tiny" x="250" y="179">response / logits / trace</text><text class="tiny" x="255" y="195">产生候选监督信号</text>';
+    s+='<path class="wire active" d="M402 169H431"/><rect class="green" x="433" y="133" width="155" height="73" rx="7"/><text x="476" y="157" font-weight="700">student</text><text class="tiny" x="450" y="179">拟合教师信号</text><text class="tiny" x="452" y="195">部署时使用</text>';
+    s+='<path class="wire active" d="M588 169H616"/><rect class="box" x="618" y="133" width="162" height="73" rx="7"/><text x="642" y="157" font-weight="700">distillation</text><text class="tiny" x="635" y="179">logit / answer /</text><text class="tiny" x="643" y="195">process loss</text>';
+    s+='<rect class="spine-box" x="48" y="233" width="732" height="65" rx="6"/><text x="64" y="255" font-weight="700">推理路径：生成候选过程 → 检查结果 → 把信号传回训练</text><path class="wire '+(state.signal==="process"?"active":"")+'" d="M101 277H424"/><rect class="'+(state.signal==="process"?"green":"box")+'" x="433" y="261" width="150" height="26" rx="4"/><text class="tiny" x="450" y="279">'+(state.signal==="process"?"过程级信号":"结果级信号")+'</text><rect class="orange" x="630" y="261" width="132" height="26" rx="4"/><text class="tiny" x="643" y="279">verifier / outcome</text>';
+    s+='<text x="48" y="336" font-weight="700">切换监督后，变化的是被比较的对象</text>';
+    if(state.signal==="outcome"){
+      s+='<rect class="green" x="48" y="353" width="290" height="58" rx="6"/><text x="64" y="377" font-weight="700">Outcome supervision</text><text class="tiny" x="64" y="398">只判断最终答案是否满足规则</text><rect class="box" x="362" y="353" width="418" height="58" rx="6"/><text x="380" y="377" font-weight="700">边界</text><text class="tiny" x="380" y="398">不一定告诉模型哪一步推理有误</text>';
+    }else{
+      s+='<rect class="green" x="48" y="353" width="290" height="58" rx="6"/><text x="64" y="377" font-weight="700">Process supervision</text><text class="tiny" x="64" y="398">检查中间步骤 / 工具 / 证明</text><rect class="box" x="362" y="353" width="418" height="58" rx="6"/><text x="380" y="377" font-weight="700">边界</text><text class="tiny" x="380" y="398">标注成本更高；过程文字也可能是错的</text>';
+    }
+    s+='<text class="tiny" x="48" y="439">蒸馏：student 可能复制 teacher 的错误或失去长尾能力；长 trace 本身不证明推理更好。</text>';
+    return s+spine();
+  }
+  const info={
+    pre:{q:"预训练究竟教会了什么？",help:"沿课件中的 token 序列从输入读到目标 token，再观察模型如何产生 loss。",metric:"预测下一个 token",formula:"L = − Σₜ log pθ(xₜ | x&lt;ₜ)",status:"低 loss 不自动证明模型事实可靠、会遵循指令或符合人类偏好。",source:"课件 p.18–22：teacher forcing、causal mask 与 next-token 预测。",pages:["p18.png","p19.png"],fn:pre},
+    data:{q:"数据阶段改变了模型的什么？",help:"选择一种来源追踪清洗路径；再切换 context 窗口，观察相同目标下可见的 token 范围。",metric:"数据分布与可见上下文",formula:"Eₓ~D[L_LM(x)]；改变 D → 改变训练样本分布",status:"扩展 context 可呈现更远依赖，但会增加 attention、缓存和训练数据覆盖要求。图中 token 串为教学示意。",source:"课件 p.23–28：数据来源与混合；p.31–38：长上下文。",pages:["p23.png","p27.png","p31.png"],fn:dataView},
+    sft:{q:"SFT / LoRA 改变了什么？",help:"点击不同任务，观察同一个 W₀ 如何配上不同低秩分支；训练目标仍是 prompt-response 的 next-token loss。",metric:"指令格式与任务行为",formula:"L_SFT = −Σₜ log πθ(yₜ|x,y&lt;ₜ)；W′ = W₀ + BᵣAᵣ",status:"LoRA 减少可训练参数，不会凭空增加基础知识；示范数据覆盖也限制学到的行为范围。",source:"课件 p.42–48：SFT；p.53–56：LoRA 与可替换适配器。",pages:["p42.png","p53.png","p54.png"],fn:sft},
+    pref:{q:"Preference 学到的是什么？",help:"prompt 和两条候选回答保持相同，再切换 RLHF 与 DPO，观察监督路径在哪里分叉。",metric:"chosen 相对 rejected 的偏好",formula:"L_DPO = −log σ(β[Δlog πθ − Δlog πref])",status:"课件 p.86 明确指出没有普适性能排序；偏好取决于数据、实现与评估任务。",source:"课件 p.67–69：偏好对；p.73：reward model 示例；p.80：PPO；p.86–88：RLHF / DPO。",pages:["p68.png","p73.png","p80.png","p86.png","p87.png"],fn:preference},
+    reason:{q:"推理与蒸馏怎样成为学习信号？",help:"切换结果级和过程级信号，沿着同一个 teacher → student 方向观察监督对象的变化。",metric:"过程可验证性与迁移成本",formula:"L_KD = T² D_KL(pᵀ_teacher ∥ pᵀ_student)；也可用 response / process loss",status:"课件只把 reasoning / distillation 列为后续主题；图中 verifier 与蒸馏机制是正文中的教学扩展。",source:"课件 p.89 提出后续主题；细节见本笔记 Reasoning、Distillation 两节。",pages:["p88.png","p89.png"],fn:reasoning}
+  };
+  function update(){
+    const d=info[state.stage];$("#scene").innerHTML=d.fn();$("#question").textContent=d.q;$("#instruction").textContent=d.help;$("#metric").textContent=d.metric;$("#metric-label").textContent="主要改变";$("#formula").innerHTML=d.formula;$("#status").textContent=d.status;$("#source-text").textContent=d.source;$("#source-images").innerHTML="";
+    d.pages.forEach(p=>{const im=document.createElement("img");im.src="../source/"+p;im.alt="对应课件原图 "+p.replace(".png","");$("#source-images").appendChild(im);});
+    $$(".stage").forEach(b=>{b.classList.toggle("active",b.dataset.stage===state.stage);b.setAttribute("aria-pressed",String(b.dataset.stage===state.stage));});
+    $$("[data-group]").forEach(g=>g.hidden=true);
+    const group={data:["source","context"],sft:["adapter"],pref:["method"],reason:["signal"]}[state.stage]||[];
+    group.forEach(name=>{$('[data-group="'+name+'"]').hidden=false;});
+    $$("[data-source]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.source===state.source)));
+    $$("[data-context]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.context===state.context)));
+    $$("[data-adapter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.adapter===state.adapter)));
+    $$("[data-method]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.method===state.method)));
+    $$("[data-signal]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.signal===state.signal)));
+  }
+  $$(".stage").forEach(b=>b.onclick=()=>{state.stage=b.dataset.stage;update();});
+  $$("[data-source]").forEach(b=>b.onclick=()=>{state.source=b.dataset.source;update();});
+  $$("[data-context]").forEach(b=>b.onclick=()=>{state.context=b.dataset.context;update();});
+  $$("[data-adapter]").forEach(b=>b.onclick=()=>{state.adapter=b.dataset.adapter;update();});
+  $$("[data-method]").forEach(b=>b.onclick=()=>{state.method=b.dataset.method;update();});
+  $$("[data-signal]").forEach(b=>b.onclick=()=>{state.signal=b.dataset.signal;update();});
+  $("[data-reset]").onclick=()=>{state.stage="pre";state.source="web";state.context="short";state.adapter="spam";state.method="rlhf";state.signal="outcome";update();};
+  update();
+})();
+</script>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-label="Step, Sigmoid, and ReLU activation functions">
+<rect width="1200" height="430" fill="#ffffff"/><text x="600" y="35" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif" font-size="25" font-weight="700" fill="#0f172a">Activation Functions</text>
+<g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif" font-size="21" font-weight="700"><text x="200" y="75" text-anchor="middle" fill="#b91c1c">Step</text><text x="600" y="75" text-anchor="middle" fill="#1d4ed8">Sigmoid</text><text x="1000" y="75" text-anchor="middle" fill="#15803d">ReLU</text></g>
+<g stroke="#cbd5e1"><path d="M60 155h280M60 275h280M460 155h280M460 275h280M860 155h280M860 275h280"/></g>
+<g stroke="#334155" stroke-width="2"><path d="M60 335h280M200 110v240M460 335h280M600 110v240M860 335h280M1000 110v240"/></g>
+<path d="M60 335H200V155H340" fill="none" stroke="#dc2626" stroke-width="4"/>
+<path d="M460 300C510 298 545 280 570 250C588 228 600 215 615 200C640 170 680 152 740 150" fill="none" stroke="#2563eb" stroke-width="4"/>
+<path d="M860 335H1000L1140 115" fill="none" stroke="#16a34a" stroke-width="4"/>
+<g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif" font-size="14" fill="#475569"><text x="65" y="355">−3</text><text x="195" y="355">0</text><text x="330" y="355">3</text><text x="465" y="355">−3</text><text x="595" y="355">0</text><text x="730" y="355">3</text><text x="865" y="355">−3</text><text x="995" y="355">0</text><text x="1130" y="355">3</text><text x="205" y="160">1</text><text x="605" y="160">1</text><text x="1005" y="120">6</text><text x="200" y="395" text-anchor="middle">a=0 (z&lt;0), a=1 (z≥0)</text><text x="600" y="395" text-anchor="middle">a=1/(1+e⁻ᶻ)</text><text x="1000" y="395" text-anchor="middle">a=max(0,z)</text></g>
+</svg>

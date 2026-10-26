@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title desc">
+  <title id="title">Attention pattern comparison</title>
+  <desc id="desc">Four query-key matrices compare full, local, global-token and low-rank attention patterns.</desc>
+  <style>text{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Noto Sans SC",sans-serif;fill:#172033} .label{font-size:18px;font-weight:700}.sub{font-size:13px;fill:#5b6475}.cell{stroke:#fff;stroke-width:1}</style>
+  <rect width="960" height="360" rx="14" fill="#f8fafc"/>
+  <g transform="translate(30 36)">
+    <text class="label" x="80" y="0" text-anchor="middle">Full</text><text class="sub" x="80" y="22" text-anchor="middle">all N² pairs</text>
+    <g transform="translate(25 42)"><rect width="110" height="110" fill="#bfdbfe"/><path d="M0 0h110M0 22h110M0 44h110M0 66h110M0 88h110M0 110h110M0 0v110M22 0v110M44 0v110M66 0v110M88 0v110M110 0v110" stroke="#fff"/></g>
+  </g>
+  <g transform="translate(260 36)">
+    <text class="label" x="80" y="0" text-anchor="middle">Local</text><text class="sub" x="80" y="22" text-anchor="middle">nearby keys</text>
+    <g transform="translate(25 42)"><rect width="110" height="110" fill="#f1f5f9"/><path d="M0 0h22v22H0zM22 0h22v44H22zM44 0h22v66H44zM66 0h22v88H66zM88 0h22v110H88zM0 22h22v22H0zM0 44h22v22H0zM0 66h22v22H0zM0 88h22v22H0z" fill="#bfdbfe"/><path d="M0 0h110M0 22h110M0 44h110M0 66h110M0 88h110M0 110h110M0 0v110M22 0v110M44 0v110M66 0v110M88 0v110M110 0v110" stroke="#fff"/></g>
+  </g>
+  <g transform="translate(490 36)">
+    <text class="label" x="80" y="0" text-anchor="middle">Global token</text><text class="sub" x="80" y="22" text-anchor="middle">local + summary row/column</text>
+    <g transform="translate(25 42)"><rect width="110" height="110" fill="#f1f5f9"/><rect width="22" height="110" fill="#fed7aa"/><rect width="110" height="22" fill="#fed7aa"/><path d="M22 22h22v22H22zM44 44h22v22H44zM66 66h22v22H66zM88 88h22v22H88z" fill="#bfdbfe"/><path d="M0 0h110M0 22h110M0 44h110M0 66h110M0 88h110M0 110h110M0 0v110M22 0v110M44 0v110M66 0v110M88 0v110M110 0v110" stroke="#fff"/></g>
+  </g>
+  <g transform="translate(720 36)">
+    <text class="label" x="80" y="0" text-anchor="middle">Low-rank</text><text class="sub" x="80" y="22" text-anchor="middle">compressed columns</text>
+    <g transform="translate(25 42)"><rect width="110" height="110" fill="#f1f5f9"/><rect x="0" width="22" height="110" fill="#bfdbfe"/><rect x="44" width="22" height="110" fill="#bfdbfe"/><rect x="88" width="22" height="110" fill="#bfdbfe"/><path d="M0 0h110M0 22h110M0 44h110M0 66h110M0 88h110M0 110h110M0 0v110M22 0v110M44 0v110M66 0v110M88 0v110M110 0v110" stroke="#fff"/></g>
+  </g>
+  <text x="480" y="328" text-anchor="middle" class="sub">Rows = queries; columns = keys. The pattern decides which pairs are computed.</text>
+</svg>

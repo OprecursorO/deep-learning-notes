@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CNN 卷积窗口：老师讲解与互动</title>
+<style>
+:root{color-scheme:light dark;--bg:#f8fafc;--surface:#fff;--ink:#172033;--muted:#536174;--line:#cbd5e1;--blue:#2563a6;--orange:#c55a11;--blue-soft:#e8f1fb;--orange-soft:#fff2df}@media(prefers-color-scheme:dark){:root{--bg:#111827;--surface:#182235;--ink:#edf2f7;--muted:#b7c3d4;--line:#43516a;--blue:#83b7ee;--orange:#f2a66b;--blue-soft:#20344f;--orange-soft:#49321e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}main{max-width:940px;margin:0 auto;padding:24px 18px 42px}h1{margin:0 0 8px;font-size:1.7rem}h2{font-size:1.1rem;margin:20px 0 8px}.teacher,.readout,.fallback{padding:12px 14px;border-left:4px solid var(--blue);background:var(--blue-soft)}.teacher p{margin:6px 0}.formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px}select,button{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.panels{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{min-width:0;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px}.grid{display:grid;gap:4px;max-width:360px}.cell{min-height:48px;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);font-variant-numeric:tabular-nums}.cell.hot{background:var(--orange-soft);outline:3px solid var(--orange);outline-offset:-2px}.cell.selected{background:var(--blue-soft);outline:3px solid var(--blue);outline-offset:-2px}.legend{color:var(--muted);font-size:.9rem}.fallback{margin-top:14px;border-left-color:var(--orange);background:var(--orange-soft)}pre{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:680px){.panels{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>CNN 卷积窗口：老师讲解与互动</h1>
+<section class="teacher" aria-labelledby="teacher-title"><h2 id="teacher-title">老师先讲清楚：卷积层到底在做什么</h2>
+<p>把橙色窗口看成一个小 filter。它覆盖输入的一个 patch，做逐元素乘法，再求和，得到 feature map 的一个数字。然后同一个 filter 移到下一个位置，重复同一件事；这就是 weight sharing。</p>
+<p>本页的教学输入是 4×4 矩阵，filter 是 <span class="formula">[[1,-1],[1,-1]]</span>。这里实现的是框架中常见的 cross-correlation：不先翻转 filter。它用来讲清窗口机制，不是课件 benchmark。</p></section>
+<div class="controls" aria-label="卷积控制"><label>stride <select id="stride"><option value="1">1</option><option value="2">2</option></select></label><label>padding <select id="pad"><option value="0">0</option><option value="1">1</option></select></label><button type="button" id="prev">上一个窗口</button><button type="button" id="next">下一个窗口</button><button type="button" id="auto" aria-pressed="false">自动播放</button><button type="button" id="stop">停止</button></div>
+<div id="readout" class="readout" aria-live="polite"></div>
+<div class="panels"><section class="panel"><h2>输入与当前 patch</h2><div id="input" class="grid" role="img" aria-label="输入矩阵，橙色为当前卷积窗口"></div><p class="legend">橙框是 filter 当前覆盖的 patch。</p></section><section class="panel"><h2>feature map</h2><div id="output" class="grid" role="img" aria-label="卷积输出矩阵，蓝色为当前输出"></div><p class="legend">蓝框是当前 patch 产生的输出位置。</p></section></div>
+<h2>当前窗口的中间计算</h2><pre id="calculation" class="formula" aria-live="polite"></pre>
+<p class="fallback"><b>没有脚本时的静态读法：</b>输出尺寸满足 <span class="formula">floor((N+2P-K)/S)+1</span>。stride 只改变窗口跳跃距离，padding 只改变边缘可见范围；它们都不改变 filter weights。</p>
+</main>
+<script>
+const input=[[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,1]],kernel=[[1,-1],[1,-1]],$=id=>document.getElementById(id);let position=0,timer=null,total=0;
+function stop(){clearInterval(timer);timer=null;$('auto').textContent='自动播放';$('auto').setAttribute('aria-pressed','false')}
+function build(){const stride=Number($('stride').value),padding=Number($('pad').value),size=input.length+2*padding,n=Math.floor((size-2)/stride)+1,values=[],spots=[],padded=Array.from({length:size},(_,i)=>Array.from({length:size},(_,j)=>input[i-padding]?.[j-padding]??0));for(let i=0;i<n;i++)for(let j=0;j<n;j++){let value=0,products=[];for(let u=0;u<2;u++)for(let v=0;v<2;v++){const a=padded[i*stride+u][j*stride+v],b=kernel[u][v];value+=a*b;products.push(a+'×'+b)}values.push(value);spots.push([i*stride,j*stride,products])}total=values.length;position=Math.min(position,total-1);return{padded,n,values,spots,stride}}
+function render(){const {padded,n,values,spots,stride}=build(),spot=spots[position],inputEl=$('input'),outputEl=$('output');inputEl.style.gridTemplateColumns='repeat('+padded.length+',minmax(40px,1fr))';inputEl.innerHTML=padded.flatMap((row,i)=>row.map((value,j)=>'<div class="cell '+(i>=spot[0]&&i<spot[0]+2&&j>=spot[1]&&j<spot[1]+2?'hot':'')+'">'+value+'</div>')).join('');outputEl.style.gridTemplateColumns='repeat('+n+',minmax(48px,1fr))';outputEl.innerHTML=values.map((value,i)=>'<div class="cell '+(i===position?'selected':'')+'">'+value+'</div>').join('');const row=Math.floor(position/n),col=position%n,patch=padded.slice(spot[0],spot[0]+2).map(r=>r.slice(spot[1],spot[1]+2));$('readout').innerHTML='窗口 <b>'+(position+1)+'/'+total+'</b>，对应输出位置 <b>['+row+','+col+']</b>；stride='+stride+'；输出尺寸 <b>'+n+'×'+n+'</b>。';$('calculation').textContent='patch = '+JSON.stringify(patch)+'\nfilter = '+JSON.stringify(kernel)+'\n逐元素乘积：'+spot[2].join(' + ')+'\n响应 = '+values[position]+'。'}
+function move(delta){position=Math.max(0,Math.min(position+delta,total-1));render();if(position===total-1)stop()}
+['stride','pad'].forEach(id=>$(id).onchange=()=>{stop();position=0;render()});$('prev').onclick=()=>{stop();move(-1)};$('next').onclick=()=>{stop();move(1)};$('stop').onclick=stop;$('auto').onclick=()=>{if(timer){stop();return}if(position===total-1){position=0;render()}$('auto').textContent='播放中…';$('auto').setAttribute('aria-pressed','true');timer=setInterval(()=>move(1),700)};render();
+</script>
+</body>
+</html>

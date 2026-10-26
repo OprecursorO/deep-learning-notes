@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>梯度下降：老师讲解与互动</title>
+<style>
+:root{color-scheme:light dark;--bg:#f8fafc;--surface:#fff;--ink:#172033;--muted:#536174;--line:#cbd5e1;--blue:#2563a6;--orange:#c55a11;--blue-soft:#e8f1fb;--orange-soft:#fff2df}
+@media(prefers-color-scheme:dark){:root{--bg:#111827;--surface:#182235;--ink:#edf2f7;--muted:#b7c3d4;--line:#43516a;--blue:#83b7ee;--orange:#f2a66b;--blue-soft:#20344f;--orange-soft:#49321e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}main{max-width:900px;margin:0 auto;padding:24px 18px 42px}h1{margin:0 0 8px;font-size:1.7rem}h2{margin:22px 0 8px;font-size:1.15rem}.teacher,.readout,.fallback{padding:12px 14px;border-left:4px solid var(--blue);background:var(--blue-soft)}.teacher p,.readout p{margin:6px 0}.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:8px}.controls label{display:grid;gap:5px}.controls input{width:100%;accent-color:var(--blue)}button{font:inherit;padding:7px 11px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;margin:4px 4px 0 0}button:hover,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.buttons{grid-column:1/-1}.formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:2px 5px;background:var(--surface);border:1px solid var(--line)}.plot-wrap{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}.plot-wrap svg{display:block;width:100%;height:auto}.legend{color:var(--muted);font-size:.92rem}.fallback{margin-top:12px;border-left-color:var(--orange);background:var(--orange-soft)}.values{font-variant-numeric:tabular-nums}@media(max-width:650px){.controls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>梯度下降：老师讲解与互动</h1>
+<p>这页只研究一个问题：<b>参数怎样一步步变到 loss 较低的位置？</b>曲线是确定性的教学函数，不是任何真实模型的 benchmark。</p>
+<section class="teacher" aria-labelledby="teacher-title">
+<h2 id="teacher-title">老师先讲清楚</h2>
+<p>把参数 θ 想成小球所在的横坐标，把 loss 想成小球的高度。gradient 告诉你当前斜坡向哪边上升；梯度下降取反方向，learning rate 决定每一步走多远。</p>
+<p>本页使用 <span class="formula">L(θ)=0.18θ²+0.15</span>，所以 <span class="formula">∂L/∂θ=0.36θ</span>，更新规则是 <span class="formula">θ ← θ−η∂L/∂θ</span>。当 θ 为正时，梯度为正，减掉它会向 0 移动。</p>
+</section>
+<h2>只改一个变量，观察一步</h2>
+<div class="controls" aria-label="梯度下降控制">
+<label for="theta">参数起始值 θ₀：<output id="thetaValue">3.00</output><input id="theta" type="range" min="-4" max="4" step="0.1" value="3"></label>
+<label for="lr">learning rate η：<output id="lrValue">0.25</output><input id="lr" type="range" min="0.02" max="8" step="0.02" value="0.25"></label>
+<div class="buttons"><button type="button" id="step">走一步</button><button type="button" id="run">连续走 12 步</button><button type="button" id="reset">重置到滑块值</button></div>
+</div>
+<div id="status" class="readout" aria-live="polite"></div><p class="legend">已完成更新步数：<output id="iteration">0</output></p>
+<div class="plot-wrap"><svg id="plot" viewBox="0 0 760 300" role="img" aria-labelledby="plot-title plot-desc"><title id="plot-title">loss 曲线与参数移动路径</title><desc id="plot-desc">蓝色曲线是 loss，橙色点表示参数更新经过的位置。</desc></svg><p class="legend">蓝色：loss 曲线；橙色：参数路径。最低点在 θ=0 附近。</p></div>
+<p class="fallback"><b>没有脚本时的静态结论：</b>η 太小，参数会慢慢靠近最低点；η 适中，下降较快；η 太大，可能跨过最低点来回摆动甚至发散。互动只是在把这条更新公式画出来。</p>
+</main>
+<script>
+const $=id=>document.getElementById(id),thetaInput=$('theta'),lrInput=$('lr');let theta=3,history=[],iteration=0;
+function loss(value){return .18*value*value+.15}function gradient(value){return .36*value}
+function render(){$('lrValue').textContent=Number(lrInput.value).toFixed(2);$('thetaValue').textContent=Number(thetaInput.value).toFixed(2);$('iteration').textContent=String(iteration);const svg=$('plot'),visited=history.concat(theta),range=Math.max(4,...visited.map(value=>Math.abs(value))),maxLoss=loss(range),plotX=value=>380+value*350/range,plotY=value=>255-(loss(value)-.15)*210/(maxLoss-.15),parts=['<line x1="30" y1="255" x2="730" y2="255" stroke="currentColor" opacity=".35"/><line x1="380" y1="35" x2="380" y2="270" stroke="currentColor" opacity=".2"/>'];let curve='';for(let i=0;i<=160;i++){const value=-range+2*range*i/160;curve+=(i?'L':'M')+plotX(value).toFixed(1)+' '+plotY(value).toFixed(1)+' '}parts.push('<path d="'+curve+'" fill="none" stroke="var(--blue)" stroke-width="3"/>');if(visited.length>1){let trail='';visited.forEach((value,i)=>trail+=(i?'L':'M')+plotX(value).toFixed(1)+' '+plotY(value).toFixed(1)+' ');parts.push('<path d="'+trail+'" fill="none" stroke="var(--orange)" stroke-width="2"/>')}visited.forEach(value=>parts.push('<circle cx="'+plotX(value).toFixed(1)+'" cy="'+plotY(value).toFixed(1)+'" r="5" fill="var(--orange)"/>'));parts.push('<text x="680" y="285" fill="currentColor" font-size="14">θ (±'+range.toPrecision(2)+')</text><text x="20" y="35" fill="currentColor" font-size="14">L(θ)</text>');svg.innerHTML=parts.join('');const g=gradient(theta),next=theta-Number(lrInput.value)*g;$('status').innerHTML='第 <b>'+iteration+'</b> 步：θ = <b>'+theta.toFixed(3)+'</b>，loss = <b>'+loss(theta).toFixed(3)+'</b>，gradient = <b>'+g.toFixed(3)+'</b>。若再走一步，θ 会变成 <b>'+next.toFixed(3)+'</b>。η='+Number(lrInput.value).toFixed(2)+' 时 '+(Number(lrInput.value)*.36<1?'更新收缩，趋近最低点。':Number(lrInput.value)*.36<2?'每步跨过最低点但幅度缩小。':'更新误差不收缩，可能持续摆动或发散。')+'图的横纵范围会随路径调整。'}
+function step(){history.push(theta);theta-=Number(lrInput.value)*gradient(theta);iteration++;render()}function reset(){theta=Number(thetaInput.value);history=[];iteration=0;render()}
+$('step').onclick=step;$('run').onclick=()=>{reset();for(let i=0;i<12;i++){history.push(theta);theta-=Number(lrInput.value)*gradient(theta);iteration++}render()};$('reset').onclick=reset;thetaInput.oninput=reset;lrInput.oninput=render;render();
+</script>
+</body>
+</html>

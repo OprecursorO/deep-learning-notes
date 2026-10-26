@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lecture 10 visual explorer</title>
+<style>
+:root{font-family:system-ui,-apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;color:#242938;background:#f7f8fc;--blue:#2637a8;--ink:#242938;--lav:#9a9bcf;--green:#c8f43b;--green-ink:#607500;--orange:#f59a45;--line:#d9ddea;--muted:#657084;--grid:#e7e9f0}*{box-sizing:border-box}body{max-width:1180px;margin:auto;padding:22px}h1,h2,h3,p{margin:0}h1{font-size:clamp(25px,3.1vw,42px);line-height:1.08}.ey{font:600 11px ui-monospace;color:var(--blue);letter-spacing:.12em}.lead{margin-top:9px;color:var(--muted);line-height:1.5}.controls{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 10px}.controls button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:9px 12px;font-weight:650;color:var(--ink);cursor:pointer}.controls button:hover{border-color:var(--blue)}.controls button:focus-visible{outline:3px solid #b8c2ff;outline-offset:2px}.controls button[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(255px,.45fr);gap:18px;align-items:start}.canvas,.readout{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;box-shadow:0 6px 22px #24326b0d}.canvas svg{display:block;width:100%;height:auto}.canvas text{font:12px system-ui,"PingFang SC",sans-serif;fill:var(--ink)}.canvas .small{font-size:11px;fill:var(--muted)}.canvas .tiny{font-size:10px;fill:var(--muted)}.canvas .eysvg{font:600 11px ui-monospace;letter-spacing:1px;fill:var(--blue)}.box{fill:#fff;stroke:var(--line);stroke-width:2}.blue{fill:#eef0ff;stroke:var(--blue);stroke-width:2}.green{fill:#efffc6;stroke:var(--green-ink);stroke-width:2}.orange{fill:#fff3cf;stroke:#e7a326;stroke-width:2}.wire{stroke:#8a91a2;fill:none;stroke-width:2}.active{stroke:var(--blue);stroke-width:4}.inactive{opacity:.5}.bar-current{fill:var(--blue)}.bar-reference{fill:var(--lav)}.bar-selected{fill:var(--green);stroke:var(--green-ink);stroke-width:2}.gridline{stroke:var(--grid);stroke-width:1}.axis{stroke:#8a91a2;stroke-width:1.5}.dashed{stroke-dasharray:5 4}.readout h3{font-size:14px;margin-bottom:8px}.readout p{font-size:13px;line-height:1.55;color:var(--muted);margin-top:8px}.readout .big{font-size:24px;line-height:1.1;font-weight:700;color:var(--blue);margin-top:15px}.readout .label{font-size:11px;color:var(--muted)}.formula{display:block;background:#171a2b;color:#fff;padding:10px;border-radius:5px;font:13px ui-monospace;margin-top:10px;overflow:auto;white-space:pre-wrap}.source{margin-top:12px}.source summary{cursor:pointer;color:var(--blue);font-size:13px}.source img{max-width:100%;display:block;margin-top:8px}.foot{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.45}.legend{display:flex;flex-wrap:wrap;gap:10px;margin:7px 0 0;font-size:11px;color:var(--muted)}.legend span{display:inline-flex;align-items:center;gap:4px}.swatch{width:10px;height:10px;border-radius:2px;display:inline-block}.note{font-size:11px;color:var(--muted);border-left:3px solid var(--orange);padding-left:8px;margin-top:10px;line-height:1.45}@media(max-width:800px){body{padding:15px}.layout{grid-template-columns:1fr}.readout{order:2}.controls{margin-top:14px}.canvas,.readout{padding:10px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<div class="ey">DEEP LEARNING · LECTURE 10 · VISUAL EXPLORER</div>
+<h1>Transformer 与现代 LLM：结构 → 局部机制 → 系统代价</h1>
+<p class="lead">先定位一个真实课件案例，再改变同一案例中的一个因素。主图、公式、数值和边界说明同步更新。</p>
+<nav class="controls" aria-label="主图主题">
+  <button type="button" aria-pressed="true" data-view="moe">MoE routing</button>
+  <button type="button" aria-pressed="false" data-view="flash">FlashAttention</button>
+  <button type="button" aria-pressed="false" data-view="kv">KV cache</button>
+</nav>
+<div class="layout">
+  <div class="canvas">
+    <svg id="scene" viewBox="0 0 820 580" role="img" aria-label="Transformer 系统代价主画布"></svg>
+    <div class="foot">蓝色：当前路径或当前比较值；绿色：当前激活对象；紫色：固定参考值。课件中的示例和教学标注会分开说明。</div>
+  </div>
+  <aside class="readout" aria-live="polite">
+    <h3 id="q">Router 真的把 token 分散了吗？</h3>
+    <p id="help">切换均衡/集中和 top-k，观察同一 token 的路由路径与 expert 负载如何一起改变。</p>
+    <div id="local" class="controls" aria-label="当前主题控制">
+      <button type="button" aria-pressed="true" data-mode="balanced">均衡</button>
+      <button type="button" aria-pressed="false" data-mode="concentrated">集中</button>
+      <button type="button" aria-pressed="true" data-k="2">top-2</button>
+      <button type="button" aria-pressed="false" data-k="4">top-4</button>
+      <button type="button" hidden aria-pressed="true" data-flash="tiled">Tiling</button>
+      <button type="button" hidden aria-pressed="false" data-flash="naive">朴素实现</button>
+      <button type="button" hidden aria-pressed="true" data-kv="mha">MHA</button>
+      <button type="button" hidden aria-pressed="false" data-kv="gqa">GQA</button>
+      <button type="button" hidden aria-pressed="false" data-kv="mqa">MQA</button>
+      <button type="button" data-reset>恢复初始状态</button>
+    </div>
+    <div class="big" id="metric">0%</div>
+    <div class="label" id="metric-label">最大负载偏差</div>
+    <code class="formula" id="formula">router(x) → top-2 experts</code>
+    <p id="status">均衡路由：四个 expert 接近目标负载。</p>
+    <details class="source"><summary id="source-title">查看课件图</summary><div id="source-images"></div></details>
+  </aside>
+</div>
+<script>
+(()=> {
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const state={view:"moe",mode:"balanced",k:2,flash:"tiled",kv:"mha"};
+  const frame=(label,title)=>'<rect class="box" x="18" y="18" width="784" height="544" rx="10"/><text class="eysvg" x="38" y="49">'+label+'</text><text x="38" y="78" font-size="20" font-weight="700">'+title+'</text>';
+  function moeScene(){
+    const concentrated=[85,5,5,5], balanced=[25,25,25,25], current=state.mode==="balanced"?balanced:concentrated, reference=state.mode==="balanced"?concentrated:balanced;
+    let s=frame("CASE A · SOURCE P.14 + P.16","一个 token 的 top-k 路径与 expert 负载");
+    s+='<text class="small" x="40" y="108">左：课件 p.16 的 100 个 routed assignments；右：课件 p.14 的单 token 计算</text>';
+    s+='<text x="56" y="140" font-weight="700">Dispatch count / 100 routed assignments</text><text class="tiny" x="56" y="156">课件示意数值；两种模式共用 0–100 纵轴</text>';
+    for(let v=0;v<=100;v+=20){const y=420-v*2.1;s+='<path class="gridline" d="M70 '+y+'H470"/><text class="tiny" x="48" y="'+(y+4)+'">'+v+'</text>';}
+    s+='<path class="axis" d="M70 210V420H470"/><text class="tiny" x="83" y="442">E1</text><text class="tiny" x="183" y="442">E2</text><text class="tiny" x="283" y="442">E3</text><text class="tiny" x="383" y="442">E4</text><text class="small" x="70" y="464">token 接收数（每 100 assignments）</text>';
+    current.forEach((v,i)=>{const x=83+i*100,h=v*2.1,y=420-h,r=reference[i]*2.1;s+='<rect class="bar-current" x="'+x+'" y="'+y+'" width="31" height="'+h+'" rx="2"/><text class="tiny" x="'+(x+7)+'" y="'+Math.max(y-5,202)+'">'+v+'</text><rect class="bar-reference" x="'+(x+36)+'" y="'+(420-r)+'" width="31" height="'+r+'" rx="2"/><text class="tiny" x="'+(x+43)+'" y="'+Math.max(420-r-5,202)+'">'+reference[i]+'</text>';});
+    s+='<rect class="bar-current" x="70" y="480" width="10" height="10" rx="2"/><text class="tiny" x="85" y="489">当前模式</text><rect class="bar-reference" x="155" y="480" width="10" height="10" rx="2"/><text class="tiny" x="170" y="489">另一模式（参考）</text>';
+    s+='<rect class="box" x="520" y="126" width="236" height="362" rx="8"/><text x="538" y="151" font-weight="700">router(x) 的概率与权重</text><text class="tiny" x="538" y="169">p：router probability；g：选中后归一化</text>';
+    const probs=[.50,.30,.15,.05],sum=state.k===2?.80:1;
+    probs.forEach((p,i)=>{const y=202+i*54,selected=i<state.k,g=selected?(p/sum).toFixed(3):"0";s+='<text x="538" y="'+y+'">E'+(i+1)+'</text><rect class="'+(selected?"green":"box")+'" x="566" y="'+(y-16)+'" width="65" height="27" rx="4"/><text class="tiny" x="580" y="'+(y+2)+'">p='+p.toFixed(2)+'</text><rect class="'+(selected?"bar-selected":"bar-reference")+'" x="642" y="'+(y-16)+'" width="72" height="27" rx="4"/><text class="tiny" x="652" y="'+(y+2)+'">g='+g+'</text><path class="wire '+(selected?"active":"inactive")+'" d="M714 '+(y-2)+'H742"/>';});
+    s+='<text class="tiny" x="538" y="430">E₃、E₄ 在 top-2 时不执行</text>';
+    if(state.k===2){s+='<rect class="blue" x="538" y="446" width="197" height="28" rx="4"/><text class="tiny" x="548" y="464">y = Σ gₑEₑ(x) → [1.25, 1.50]</text>';}
+    else{s+='<rect class="orange" x="538" y="446" width="197" height="28" rx="4"/><text class="tiny" x="548" y="464">top-4：课件未给 E₃/E₄ 向量</text>';}
+    return s;
+  }
+  function flashScene(){
+    const tiled=state.flash==="tiled";let s=frame("CASE B · SOURCE P.32","FlashAttention：资源层级 → tile → HBM traffic");
+    s+='<text class="small" x="40" y="108">课件图的存储金字塔和 tiled attention 重绘为可追踪路径</text>';
+    s+='<polygon points="72,210 238,210 155,116" fill="#dd8f3f"/><polygon points="50,300 260,300 238,210 72,210" fill="#58ad5c"/><polygon points="28,416 282,416 260,300 50,300" fill="#78b7bf"/>';
+    s+='<text x="129" y="161" fill="#fff">GPU SRAM</text><text x="109" y="254" fill="#fff">GPU HBM</text><text x="99" y="354" fill="#fff">CPU DRAM</text>';
+    s+='<text class="tiny" x="242" y="153">19 TB/s</text><text class="tiny" x="242" y="167">20 MB</text><text class="tiny" x="264" y="250">1.5 TB/s</text><text class="tiny" x="264" y="264">40 GB</text><text class="tiny" x="286" y="350">12.8 GB/s</text><text class="tiny" x="286" y="364">&gt;1 TB</text><text class="tiny" x="34" y="438">快 / 小</text><text class="tiny" x="220" y="438">慢 / 大</text>';
+    s+='<rect class="box" x="350" y="132" width="400" height="302" rx="8"/><text x="368" y="158" font-weight="700">Q / K / V blocks → attention output</text><text class="tiny" x="368" y="176">'+(tiled?"当前：tile 在 SRAM 内完成局部 softmax 累积":"对照：中间 attention 矩阵反复穿过 HBM")+'</text>';
+    for(let i=0;i<16;i++){const x=370+(i%8)*42,y=204+Math.floor(i/8)*46,active=tiled||i%4===0;s+='<rect class="'+(active?"green":"orange")+(tiled?"":" inactive")+'" x="'+x+'" y="'+y+'" width="32" height="28" rx="3"/><text class="tiny" x="'+(x+11)+'" y="'+(y+18)+'">'+(i+1)+'</text>';}
+    if(tiled){s+='<path class="wire active" d="M545 300V352"/><path class="wire active" d="M533 342L545 352L557 342"/><rect class="green" x="477" y="360" width="140" height="38" rx="5"/><text x="506" y="384">online output</text>';}
+    else{s+='<path class="wire active dashed" d="M545 300V350"/><path class="wire active dashed" d="M545 350V300"/><text class="tiny" x="478" y="372">HBM read/write × many</text><rect class="orange" x="477" y="384" width="140" height="38" rx="5"/><text x="497" y="408">materialized S</text>';}
+    s+='<text x="368" y="472" font-weight="700">Attention operator stays the same</text><text class="small" x="368" y="492">softmax(QKᵀ)V；变化的是中间结果落在哪里、搬几次</text><text class="tiny" x="368" y="512">traffic 的“1× / 多次”是定性教学比较，不是硬件 benchmark</text>';
+    s+='<text class="tiny" x="40" y="480">课件中的硬件速率/容量是该页示例，不代表所有 GPU</text>';
+    return s;
+  }
+  function kvScene(){
+    const heights={mha:100,gqa:50,mqa:25},cache={mha:"2 GiB",gqa:"1 GiB",mqa:"0.5 GiB"},heads={mha:4,gqa:2,mqa:1},current=state.kv;
+    let s=frame("CASE C · SOURCE P.29 + P.30","query heads 不变，KV cache 副本改变");
+    s+='<text class="small" x="40" y="108">课件 toy model：L=32，B=1，t=32768，dₕ=128，s=2 bytes；只比较 KV cache</text>';
+    s+='<rect class="blue" x="60" y="130" width="650" height="58" rx="7"/><text x="80" y="155" font-weight="700">Q heads = 4（始终不变）</text><text class="small" x="80" y="176">K/V heads：MHA 4 → GQA 2 → MQA 1；减少副本，不减少 token 位置</text>';
+    for(let v=0;v<=100;v+=25){const y=430-v*2.1;s+='<path class="gridline" d="M98 '+y+'H700"/><text class="tiny" x="76" y="'+(y+4)+'">'+v+'</text>';}
+    s+='<path class="axis" d="M98 220V430H700"/><text class="small" x="100" y="464">相对 KV cache（% of MHA）</text>';
+    ["mha","gqa","mqa"].forEach((key,i)=>{const x=165+i*170,h=heights[key],sel=key===current;s+='<rect class="'+(sel?"bar-selected":"bar-current")+'" x="'+x+'" y="'+(430-h*2.1)+'" width="72" height="'+(h*2.1)+'" rx="3"/><text x="'+(x+20)+'" y="450">'+key.toUpperCase()+'</text><text class="tiny" x="'+(x+5)+'" y="'+Math.max(430-h*2.1-6,211)+'">'+cache[key]+'</text><text class="tiny" x="'+(x+18)+'" y="480">Hᴷⱽ='+heads[key]+'</text>';});
+    s+='<rect class="box" x="98" y="500" width="602" height="34" rx="5"/><text class="tiny" x="112" y="522">Bytes = 2 × L × B × t × Hᴷⱽ × dₕ × s；每层缓存形状 [B,Hᴷⱽ,t,dₕ]</text>';
+    return s;
+  }
+  function sync(){
+    $("#scene").innerHTML=state.view==="moe"?moeScene():state.view==="flash"?flashScene():kvScene();
+    $$("[data-mode],[data-k],[data-flash],[data-kv]").forEach(b=>{b.hidden=true;b.setAttribute("aria-pressed","false");});
+    $$("[data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===state.view)));
+    if(state.view==="moe"){
+      $$("[data-mode],[data-k]").forEach(b=>{b.hidden=false;b.setAttribute("aria-pressed",String(b.dataset.mode===state.mode||Number(b.dataset.k)===state.k));});
+      $("#q").textContent="Router 真的把 token 分散了吗？";$("#help").textContent="切换均衡/集中和 top-k，观察同一 token 的路由路径与 expert 负载如何一起改变。";$("#metric").textContent=state.mode==="balanced"?"0%":"60%";$("#metric-label").textContent="最大负载偏差（每 100 assignments）";$("#formula").textContent="router(x) → top-"+state.k+";  gₑ = pₑ / Σ_top-k p";$("#status").textContent=state.mode==="balanced"?"均衡模式：每个 expert 约接收 25 个 assignment；top-"+state.k+" 只激活 "+state.k+" 个。":"集中模式：Expert 1 接收约 85 个 assignment，其余接近空闲；这正是 routing collapse 的负载边界。";$("#source-title").textContent="查看课件图 p.14、p.16";$("#source-images").innerHTML='<img src="../source/p14.png" alt="课件 p.14 top-2 routing worked example"><img src="../source/p16.png" alt="课件 p.16 routing collapse load balance">';
+    }else if(state.view==="flash"){
+      $$("[data-flash]").forEach(b=>{b.hidden=false;b.setAttribute("aria-pressed",String(b.dataset.flash===state.flash));});
+      $("#q").textContent="FlashAttention 优化的是什么？";$("#help").textContent="切换 tiling/朴素实现，沿着 Q/K/V blocks 观察中间结果是否反复穿过 HBM。";$("#metric").textContent=state.flash==="tiled"?"少写回":"反复读写";$("#metric-label").textContent="完整 attention matrix 是否写入 HBM";$("#formula").textContent=state.flash==="tiled"?"tile(Q,K,V) → SRAM → online softmax → output":"QKᵀ / softmax / PV → materialized intermediate → HBM";$("#status").textContent=state.flash==="tiled"?"Tiling 把局部累积留在更快的 SRAM，避免把完整 attention 矩阵写回 device memory；数学算子保持不变。":"朴素实现的瓶颈来自中间结果的读写；这不是把 attention 公式换成另一个公式。";$("#source-title").textContent="查看课件图 p.32";$("#source-images").innerHTML='<img src="../source/p32.png" alt="课件 p.32 FlashAttention memory hierarchy and tiling">';
+    }else{
+      $$("[data-kv]").forEach(b=>{b.hidden=false;b.setAttribute("aria-pressed",String(b.dataset.kv===state.kv));});
+      const copy={mha:"MHA：4 个 query heads 各自拥有 K/V head，课件 toy cache 为 2 GiB。",gqa:"GQA：4 个 query heads 共享 2 个 K/V heads，toy cache 减半至 1 GiB。",mqa:"MQA：4 个 query heads 共享 1 个 K/V head，toy cache 为 0.5 GiB；质量仍需单独评估。"};
+      $("#q").textContent="减少 KV heads，究竟省了什么？";$("#help").textContent="点击 MHA、GQA、MQA，保持 query heads=4，只比较缓存中的 K/V head 副本。";$("#metric").textContent=state.kv==="mha"?"1× · 2 GiB":state.kv==="gqa"?"1/2× · 1 GiB":"1/4× · 0.5 GiB";$("#metric-label").textContent="相对 KV cache";$("#formula").textContent="Bytes = 2 × L × B × t × Hᴷⱽ × dₕ × s";$("#status").textContent=copy[state.kv];$("#source-title").textContent="查看课件图 p.29、p.30";$("#source-images").innerHTML='<img src="../source/p29.png" alt="课件 p.29 MHA GQA MQA tensor shapes"><img src="../source/p30.png" alt="课件 p.30 KV cache memory formula">';
+    }
+  }
+  $$("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;sync();});
+  $$("[data-mode]").forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;sync();});
+  $$("[data-k]").forEach(b=>b.onclick=()=>{state.k=Number(b.dataset.k);sync();});
+  $$("[data-flash]").forEach(b=>b.onclick=()=>{state.flash=b.dataset.flash;sync();});
+  $$("[data-kv]").forEach(b=>b.onclick=()=>{state.kv=b.dataset.kv;sync();});
+  $("[data-reset]").onclick=()=>{state.view="moe";state.mode="balanced";state.k=2;state.flash="tiled";state.kv="mha";sync();};
+  sync();
+})();
+</script>
